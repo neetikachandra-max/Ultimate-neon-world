@@ -5,79 +5,111 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Neon Hub Ultimate</title>
     <style>
-        :root { --neon: #00f2ff; --bg: #050505; }
-        body { background-color: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; height: 100vh; margin: 0; font-family: 'Courier New', Courier, monospace; overflow: hidden; }
-        .tabs { display: flex; gap: 8px; margin: 20px 0; }
-        .tab-btn { background: #111; color: white; border: 2px solid #333; padding: 10px 15px; border-radius: 20px; cursor: pointer; font-weight: bold; }
-        .tab-btn.active { border-color: var(--neon); color: var(--neon); box-shadow: 0 0 10px var(--neon); }
-        .section { display: none; flex-direction: column; align-items: center; width: 100%; }
-        .section.active { display: flex; }
-        .digital { font-size: 3rem; color: var(--neon); text-shadow: 0 0 10px var(--neon); margin: 20px; }
-        input, select { background: #000; color: var(--neon); border: 2px solid #333; padding: 12px; border-radius: 8px; font-size: 1.2rem; margin: 5px; text-align: center; font-family: inherit; }
-        select { width: 180px; -webkit-appearance: none; } /* Ensures dropdown shows on iPad */
-        .btn-row { display: flex; gap: 10px; margin-top: 20px; }
-        .action-btn { padding: 15px 30px; background: #111; color: white; border: 2px solid var(--neon); border-radius: 8px; font-weight: bold; cursor: pointer; }
+        :root { --n: #00f2ff; --bg: #050505; }
+        body { background: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; font-family: sans-serif; margin: 0; overflow: hidden; height: 100vh; }
+        .tabs { display: flex; gap: 5px; margin: 10px 0; z-index: 10; flex-wrap: wrap; justify-content: center; }
+        .tab-btn { background: #111; color: #888; border: 2px solid #333; padding: 8px 12px; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 11px; }
+        .tab-btn.active { border-color: var(--n); color: var(--n); box-shadow: 0 0 10px var(--n); }
+        .sec { display: none; flex-direction: column; align-items: center; width: 100%; }
+        .sec.active { display: flex; }
+        
+        /* ANALOGUE CLOCK */
+        .clock { width: 240px; height: 240px; border: 5px solid #1a1a1a; border-radius: 50%; position: relative; background: #000; margin-bottom: 10px; box-shadow: 0 0 20px #000; }
+        .dot { position: absolute; top: 50%; left: 50%; width: 8px; height: 8px; background: white; border-radius: 50%; transform: translate(-50%, -50%); z-index: 5; }
+        .hand { position: absolute; bottom: 50%; left: 50%; transform-origin: bottom; background: var(--n); transform: translateX(-50%); border-radius: 5px; z-index: 4; }
+        .hour { width: 6px; height: 25%; background: white; }
+        .min { width: 4px; height: 35%; }
+        .sec-hand { width: 2px; height: 40%; background: #ff0055; }
+        
+        /* Markings & Numbers */
+        .mark { position: absolute; width: 100%; height: 100%; text-align: center; }
+        .line { width: 2px; height: 8px; background: #333; margin: 0 auto; }
+        .line.big { width: 4px; height: 12px; background: var(--n); box-shadow: 0 0 5px var(--n); }
+        .num { position: absolute; width: 20px; height: 20px; transform: translate(-50%, -50%); color: white; font-size: 14px; font-weight: bold; }
+
+        .dig { font-size: 2.2rem; color: var(--n); text-shadow: 0 0 10px var(--n); margin: 5px; font-family: monospace; }
+        input, select { background: #000; color: var(--n); border: 2px solid #333; padding: 10px; border-radius: 8px; font-size: 1rem; margin: 3px; text-align: center; }
+        .btn { padding: 12px 20px; background: #111; color: white; border: 2px solid var(--n); border-radius: 8px; font-weight: bold; margin: 5px; cursor: pointer; }
+        #over { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; flex-direction: column; }
     </style>
 </head>
 <body>
+    <div id="over"><h1>ALARM!</h1><button class="btn" onclick="stopA()">STOP</button></div>
+    
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('clock')">CLOCK</button>
-        <button class="tab-btn" onclick="switchTab('alarm')">ALARM</button>
+        <button class="tab-btn active" onclick="tab('c')">CLOCK</button>
+        <button class="tab-btn" onclick="tab('t')">TIMER</button>
+        <button class="tab-btn" onclick="tab('s')">SW</button>
+        <button class="tab-btn" onclick="tab('a')">ALARM</button>
+        <input type="color" id="cp" value="#00f2ff" onchange="document.documentElement.style.setProperty('--n', this.value)" title="Change Theme Color">
     </div>
 
-    <div id="clockSection" class="section active">
-        <div class="digital" id="clockDigital">00:00:00</div>
+    <div id="c" class="sec active">
+        <select id="city" onchange="up()" style="width: 180px;"><option value="local">Local Time</option><option value="America/New_York">New York</option><option value="Europe/London">London</option><option value="Asia/Tokyo">Tokyo</option><option value="Australia/Sydney">Sydney</option></select>
+        <div class="clock" id="ana">
+            <div class="dot"></div>
+            <div id="h-hand" class="hand hour"></div><div id="m-hand" class="hand min"></div><div id="s-hand" class="hand sec-hand"></div>
+        </div>
+        <div class="dig" id="cd">00:00:00</div>
     </div>
 
-    <div id="alarmSection" class="section">
-        <select id="a-day">
-            <option value="-1">Every Day</option>
-            <option value="1">Monday</option>
-            <option value="2">Tuesday</option>
-            <option value="3">Wednesday</option>
-            <option value="4">Thursday</option>
-            <option value="5">Friday</option>
-            <option value="6">Saturday</option>
-            <option value="0">Sunday</option>
-        </select>
-        <div style="display:flex;">
-            <input type="number" id="a-h" placeholder="HR">
-            <input type="number" id="a-m" placeholder="MIN">
-        </div>
-        <div id="alarmStatus" style="margin-top:15px; color:var(--neon);">No Alarm Set</div>
-        <div class="btn-row">
-            <button class="action-btn" onclick="setAlarm()">SET ALARM</button>
-            <button class="action-btn" style="border-color:#ff0055; color:#ff0055;" onclick="cancelAlarm()">CANCEL</button>
-        </div>
+    <div id="t" class="sec">
+        <div id="ti"><input id="th" placeholder="H"><input id="tm" placeholder="M"><input id="ts" placeholder="S"></div>
+        <div class="dig" id="td" style="display:none">00:00:00</div>
+        <button class="btn" onclick="startT()">START</button><button class="btn" onclick="resetT()">RESET</button>
+    </div>
+
+    <div id="s" class="sec"><div class="dig" id="sd">00:00.00</div><button class="btn" id="sb" onclick="startS()">START</button><button class="btn" onclick="resetS()">RESET</button></div>
+
+    <div id="a" class="sec">
+        <select id="ad" style="width: 200px;"><option value="-1">Every Day</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option></select>
+        <div><input id="ah" placeholder="HR"><input id="am" placeholder="MIN"></div>
+        <p id="as" style="color:var(--n)">No Alarm Set</p><button class="btn" onclick="setA()">SET ALARM</button>
     </div>
 
     <script>
-        let alarmTime = null;
-        function switchTab(s) {
-            document.querySelectorAll('.tab-btn, .section').forEach(e => e.classList.remove('active'));
-            event.target.classList.add('active');
-            document.getElementById(s + 'Section').classList.add('active');
-        }
-        function update() {
-            const now = new Date();
-            document.getElementById('clockDigital').innerText = now.toLocaleTimeString();
-            if(alarmTime && now.getHours() == alarmTime.h && now.getMinutes() == alarmTime.m && now.getSeconds() == 0) {
-                if(alarmTime.d == -1 || alarmTime.d == now.getDay()) alert("ALARM!");
+        let tI, sI, aL, au, tS=0, sM=0, alarmTime=null;
+        
+        // DRAW CLOCK LINES & NUMBERS
+        const ana = document.getElementById('ana');
+        for(let i=0; i<60; i++) {
+            if(i%5==0) {
+                let m = document.createElement('div'); m.className='mark'; m.style.transform=`rotate(${i*6}deg)`;
+                m.innerHTML=`<div class="line big"></div>`; ana.appendChild(m);
+                let v = i/5 === 0 ? 12 : i/5;
+                let n = document.createElement('div'); n.className='num';
+                let ang = (i*6 - 90) * (Math.PI/180);
+                n.style.left = (50 + 36 * Math.cos(ang)) + '%'; n.style.top = (50 + 36 * Math.sin(ang)) + '%';
+                n.innerText = v; ana.appendChild(n);
+            } else {
+                let m = document.createElement('div'); m.className='mark'; m.style.transform=`rotate(${i*6}deg)`;
+                m.innerHTML=`<div class="line"></div>`; ana.appendChild(m);
             }
         }
-        setInterval(update, 1000);
-        function setAlarm() {
-            alarmTime = { 
-                h: document.getElementById('a-h').value, 
-                m: document.getElementById('a-m').value, 
-                d: document.getElementById('a-day').value 
-            };
-            document.getElementById('alarmStatus').innerText = "Alarm Set!";
+
+        function tab(n){ document.querySelectorAll('.tab-btn, .sec').forEach(e=>e.classList.remove('active')); event.target.classList.add('active'); document.getElementById(n).classList.add('active'); }
+        
+        function up(){
+            let z=document.getElementById('city').value, now=new Date();
+            if(z!=='local') now=new Date(new Date().toLocaleString("en-US",{timeZone:z}));
+            let s=now.getSeconds(), m=now.getMinutes(), h=now.getHours(), d=now.getDay();
+            document.getElementById('s-hand').style.transform=`translateX(-50%) rotate(${s*6}deg)`;
+            document.getElementById('m-hand').style.transform=`translateX(-50%) rotate(${m*6}deg)`;
+            document.getElementById('h-hand').style.transform=`translateX(-50%) rotate(${(h%12)*30+m/2}deg)`;
+            document.getElementById('cd').innerText=now.toLocaleTimeString();
+            if(alarmTime && h==alarmTime.h && m==alarmTime.m && s==0 && (alarmTime.d==-1 || alarmTime.d==d)) trig();
         }
-        function cancelAlarm() { 
-            alarmTime = null; 
-            document.getElementById('alarmStatus').innerText = "No Alarm Set"; 
-        }
+        setInterval(up, 1000);
+
+        function startT(){ if(tS==0) tS=(th.value*3600)+(tm.value*60)+(ts.value*1); if(tS<=0) return; ti.style.display='none'; td.style.display='block'; tI=setInterval(()=>{tS--; let h=Math.floor(tS/3600), m=Math.floor((tS%3600)/60), s=tS%60; td.innerText=`${h}:${m}:${s}`; if(tS<=0){clearInterval(tI);trig();}},1000); }
+        function resetT(){ clearInterval(tI); tS=0; ti.style.display='block'; td.style.display='none'; }
+        
+        function startS(){ if(sI){clearInterval(sI);sI=null;sb.innerText='START';}else{sb.innerText='STOP';sI=setInterval(()=>{sM+=10;let m=Math.floor(sM/60000),s=Math.floor((sM/1000)%60),ms=Math.floor((sM%1000)/10);sd.innerText=`${m}:${s}.${ms}`;},10);}}
+        function resetS(){ clearInterval(sI); sI=null; sM=0; sd.innerText='00:00.00'; sb.innerText='START'; }
+        
+        function setA(){ alarmTime={h:ah.value,m:am.value,d:ad.value}; as.innerText="Alarm Active!"; }
+        function trig(){ document.getElementById('over').style.display='flex'; au=new (window.AudioContext||window.webkitAudioContext)(); aL=setInterval(()=>{let o=au.createOscillator();let g=au.createGain();o.connect(g);g.connect(au.destination);o.start();o.stop(au.currentTime+0.2);},500); }
+        function stopA(){ clearInterval(aL); document.getElementById('over').style.display='none'; resetT(); }
     </script>
 </body>
 </html>
