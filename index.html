@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Hub Ultimate</title>
+    <style>
+        :root { --neon: #00f2ff; --bg: #050505; }
+        body { background-color: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; height: 100vh; margin: 0; font-family: 'Courier New', Courier, monospace; overflow: hidden; }
+        .tabs { display: flex; gap: 8px; margin: 20px 0; }
+        .tab-btn { background: #111; color: white; border: 2px solid #333; padding: 10px 15px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+        .tab-btn.active { border-color: var(--neon); color: var(--neon); box-shadow: 0 0 10px var(--neon); }
+        .section { display: none; flex-direction: column; align-items: center; width: 100%; }
+        .section.active { display: flex; }
+        .digital { font-size: 3rem; color: var(--neon); text-shadow: 0 0 10px var(--neon); margin: 20px; }
+        input, select { background: #000; color: var(--neon); border: 2px solid #333; padding: 12px; border-radius: 8px; font-size: 1.2rem; margin: 5px; text-align: center; font-family: inherit; }
+        select { width: 180px; -webkit-appearance: none; } /* Ensures dropdown shows on iPad */
+        .btn-row { display: flex; gap: 10px; margin-top: 20px; }
+        .action-btn { padding: 15px 30px; background: #111; color: white; border: 2px solid var(--neon); border-radius: 8px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('clock')">CLOCK</button>
+        <button class="tab-btn" onclick="switchTab('alarm')">ALARM</button>
+    </div>
+
+    <div id="clockSection" class="section active">
+        <div class="digital" id="clockDigital">00:00:00</div>
+    </div>
+
+    <div id="alarmSection" class="section">
+        <select id="a-day">
+            <option value="-1">Every Day</option>
+            <option value="1">Monday</option>
+            <option value="2">Tuesday</option>
+            <option value="3">Wednesday</option>
+            <option value="4">Thursday</option>
+            <option value="5">Friday</option>
+            <option value="6">Saturday</option>
+            <option value="0">Sunday</option>
+        </select>
+        <div style="display:flex;">
+            <input type="number" id="a-h" placeholder="HR">
+            <input type="number" id="a-m" placeholder="MIN">
+        </div>
+        <div id="alarmStatus" style="margin-top:15px; color:var(--neon);">No Alarm Set</div>
+        <div class="btn-row">
+            <button class="action-btn" onclick="setAlarm()">SET ALARM</button>
+            <button class="action-btn" style="border-color:#ff0055; color:#ff0055;" onclick="cancelAlarm()">CANCEL</button>
+        </div>
+    </div>
+
+    <script>
+        let alarmTime = null;
+        function switchTab(s) {
+            document.querySelectorAll('.tab-btn, .section').forEach(e => e.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(s + 'Section').classList.add('active');
+        }
+        function update() {
+            const now = new Date();
+            document.getElementById('clockDigital').innerText = now.toLocaleTimeString();
+            if(alarmTime && now.getHours() == alarmTime.h && now.getMinutes() == alarmTime.m && now.getSeconds() == 0) {
+                if(alarmTime.d == -1 || alarmTime.d == now.getDay()) alert("ALARM!");
+            }
+        }
+        setInterval(update, 1000);
+        function setAlarm() {
+            alarmTime = { 
+                h: document.getElementById('a-h').value, 
+                m: document.getElementById('a-m').value, 
+                d: document.getElementById('a-day').value 
+            };
+            document.getElementById('alarmStatus').innerText = "Alarm Set!";
+        }
+        function cancelAlarm() { 
+            alarmTime = null; 
+            document.getElementById('alarmStatus').innerText = "No Alarm Set"; 
+        }
+    </script>
+</body>
+</html>
